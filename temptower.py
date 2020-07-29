@@ -228,6 +228,8 @@ class TemperatureTower(Machine):
     
     def comment(self, line):
         super().comment(line)
+        line = line.replace(';', '', 1)
+        line = line.lstrip()
         self.echo('', [], line)
 
     def unimplemented(self, command, args, comment=''):
