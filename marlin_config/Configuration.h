@@ -777,8 +777,8 @@
  */
 // Marlin example firmware 020006 uses 97 for E0 axis steps per unit
 // Rob Mendon / 3D Printing Canada uses 93 for E0 axis steps per unit
-// I'm not sure which is correct. - HVC
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 93 }
+// Single calibration run on 500mm indicates it should be 99.3984
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 99.4 }
 
 /**
  * Default Max Feed Rate (mm/s)
@@ -1050,8 +1050,8 @@
 // Marlin example firmware 020006 uses (-43,-5,0) for probe offset
 // Rob Mendon / 3D Printing Canada uses (-40,-10,0) for probe offset
 // I'm not sure which is correct. - HVC
-// However, on my machine, the Z offset is more like 2.02... - HVC
-#define NOZZLE_TO_PROBE_OFFSET { -43, -5, 2 }
+// However, on my machine, the Z offset is more like -2.02... - HVC
+#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.1 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1102,8 +1102,9 @@
 // Marlin example config 020006 uses 5 for Z_CLEARANCE_BETWEEN_PROBES
 // Both use 5 for Z_CLEARANCE_MULTI_PROBE
 // 4 will probably work... - HVC
-#define Z_CLEARANCE_BETWEEN_PROBES  4 // Z Clearance between probe points
-#define Z_CLEARANCE_MULTI_PROBE     4 // Z Clearance between multiple probes
+// 3 will probably work... - HVC
+#define Z_CLEARANCE_BETWEEN_PROBES  3 // Z Clearance between probe points
+#define Z_CLEARANCE_MULTI_PROBE     3 // Z Clearance between multiple probes
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
 #define Z_PROBE_LOW_POINT          -2 // Farthest distance below the trigger-point to go before stopping
@@ -1113,7 +1114,8 @@
 #define Z_PROBE_OFFSET_RANGE_MAX 20
 
 // Enable the M48 repeatability test to test probe accuracy
-//#define Z_MIN_PROBE_REPEATABILITY_TEST
+// Why not enable this? - HVC
+#define Z_MIN_PROBE_REPEATABILITY_TEST
 
 // Before deploy/stow pause for user confirmation
 //#define PAUSE_BEFORE_DEPLOY_STOW
