@@ -359,8 +359,10 @@
 // Enabling, this definitely seems like a good idea... - HVC
 #define HOTEND_IDLE_TIMEOUT
 #if ENABLED(HOTEND_IDLE_TIMEOUT)
-  #define HOTEND_IDLE_TIMEOUT_SEC (5*60)    // (seconds) Time without extruder movement to trigger protection
-  #define HOTEND_IDLE_MIN_TRIGGER   160     // (°C) Minimum temperature to enable hotend protection
+  // This has to be long enough for ABL to complete! - HVC
+  #define HOTEND_IDLE_TIMEOUT_SEC (20*60)    // (seconds) Time without extruder movement to trigger protection
+  // Made this much lower to ensure it always triggers - HVC
+  #define HOTEND_IDLE_MIN_TRIGGER    70     // (°C) Minimum temperature to enable hotend protection
   #define HOTEND_IDLE_NOZZLE_TARGET   0     // (°C) Safe temperature for the nozzle after timeout
   #define HOTEND_IDLE_BED_TARGET      0     // (°C) Safe temperature for the bed after timeout
 #endif
