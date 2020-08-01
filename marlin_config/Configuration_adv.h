@@ -357,7 +357,8 @@
  * Prevent filament in the nozzle from charring and causing a critical jam.
  */
 // Enabling, this definitely seems like a good idea... - HVC
-#define HOTEND_IDLE_TIMEOUT
+// Disabling to see if it's causing prints to fail - HVC
+// #define HOTEND_IDLE_TIMEOUT
 #if ENABLED(HOTEND_IDLE_TIMEOUT)
   // This has to be long enough for ABL to complete! - HVC
   #define HOTEND_IDLE_TIMEOUT_SEC (20*60)    // (seconds) Time without extruder movement to trigger protection
@@ -827,7 +828,8 @@
 // Default stepper release if idle. Set to 0 to deactivate.
 // Steppers will shut down DEFAULT_STEPPER_DEACTIVE_TIME seconds after the last move when DISABLE_INACTIVE_? is true.
 // Time can be set by M18 and M84.
-#define DEFAULT_STEPPER_DEACTIVE_TIME 120
+// I assume this is in seconds. Adjusted 10x from 120 to 1200 (20m) - HVC
+#define DEFAULT_STEPPER_DEACTIVE_TIME 1200
 #define DISABLE_INACTIVE_X true
 #define DISABLE_INACTIVE_Y true
 #define DISABLE_INACTIVE_Z true  // Set to false if the nozzle will fall down on your printed part when print has finished.

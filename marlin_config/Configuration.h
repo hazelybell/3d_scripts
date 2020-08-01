@@ -559,15 +559,15 @@
   // Marlin example firmware 020006 uses this for CR-20 Pro - HVC
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  // #define DEFAULT_bedKp 10.00
-  // #define DEFAULT_bedKi .023
-  // #define DEFAULT_bedKd 305.4
+  #define DEFAULT_bedKp 10.00
+  #define DEFAULT_bedKi .023
+  #define DEFAULT_bedKd 305.4
   
   // Rob Mendon / 3D Printing Canada uses this for CR-20 Pro - HVC
   // CR20 Pro
-  #define DEFAULT_bedKp 110.60
-  #define DEFAULT_bedKi 21.78
-  #define DEFAULT_bedKd 374.50
+//   #define DEFAULT_bedKp 110.60
+//   #define DEFAULT_bedKi 21.78
+//   #define DEFAULT_bedKd 374.50
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from pidautotune
@@ -810,8 +810,10 @@
 #define DEFAULT_MAX_ACCELERATION      { 500, 500, 100, 1000 }
 
 //#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
+// Limit settings to maximum I've seen TIMES TWO - HVC
+// Stock is { 6000, 6000, 200, 20000 } - HVC
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
-  #define MAX_ACCEL_EDIT_VALUES       { 6000, 6000, 200, 20000 } // ...or, set your own edit limits
+  #define MAX_ACCEL_EDIT_VALUES       { 1000, 1000, 200, 10000 } // ...or, set your own edit limits
 #endif
 
 /**
@@ -837,7 +839,8 @@
  * When changing speed and direction, if the difference is less than the
  * value set here, it may happen instantaneously.
  */
-//#define CLASSIC_JERK
+// Enabling this (disabling junction deviation) to test if it improves reliability - HVC
+#define CLASSIC_JERK
 #if ENABLED(CLASSIC_JERK)
 // Marlin example firmware 020006 uses 10.0 X and Y-Jerk
 // Rob Mendon / 3D Printing Canada uses 10.0 X and Y-Jerk
@@ -1052,7 +1055,7 @@
 // Rob Mendon / 3D Printing Canada uses (-40,-10,0) for probe offset
 // I'm not sure which is correct. - HVC
 // However, on my machine, the Z offset is more like -2.02... - HVC
-#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.1 }
+#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.02 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1104,8 +1107,9 @@
 // Both use 5 for Z_CLEARANCE_MULTI_PROBE
 // 4 will probably work... - HVC
 // 3 will probably work... - HVC
-#define Z_CLEARANCE_BETWEEN_PROBES  3 // Z Clearance between probe points
-#define Z_CLEARANCE_MULTI_PROBE     3 // Z Clearance between multiple probes
+// 2 will probably work... - HVC
+#define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
+#define Z_CLEARANCE_MULTI_PROBE     2 // Z Clearance between multiple probes
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
 #define Z_PROBE_LOW_POINT          -2 // Farthest distance below the trigger-point to go before stopping
@@ -1829,7 +1833,8 @@
  *
  * Use CRC checks and retries on the SD communication.
  */
-//#define SD_CHECK_AND_RETRY
+// Enabled... seems useful? - HVC
+#define SD_CHECK_AND_RETRY
 
 /**
  * LCD Menu Items
