@@ -25,6 +25,7 @@ EXTRA_Z_HOP = 0
 SLOW_E_MM = -1 # disable for now
 SLOW_XY_RATE = 2*60 # in mm per minute for some reason
 SLOW_BEFORE = 'retract' # retract or any
+WIPE_XY_FEEDRATE = 2.5*60 # in mm per minute
 
 import sys
 import os
@@ -132,6 +133,18 @@ class Machine:
             self.line_analysis.retract = False
         self.prev_e = self.position[3]
     
+    def detect_wipe(self):
+        if (
+            self.line_analysis.retract
+            and (
+                self.line_analysis.delta[0] != 0
+                or self.line_analysis.delta[1] != 0
+            )
+        ):
+            self.line_analysis.wipe = True
+        else:
+            self.line_analysis.wipe = False
+    
     def move_axis(self, axis, number):
         if self.position[axis] is None:
             self.position[axis] = 0
@@ -191,6 +204,7 @@ class Machine:
         if hasattr(self, 'feedrate'):
             self.line_analysis.feedrate = self.feedrate
         self.detect_retract()
+        self.detect_wipe()
     
     def offset_axis(self, axis, where):
         if self.position[axis] is None:
@@ -406,6 +420,14 @@ class ExtrusionDecelerator(Mutator):
             elif arg[0] == 'E':
                 extrudes = True
         if (
+            line_analysis.wipe
+            and hasattr(line_analysis, 'feedrate')
+            and line_analysis.feedrate is not None
+            and line_analysis.feedrate > SLOW_XY_RATE
+            ):
+            self.output(f"; wipe feedrate: {WIPE_XY_FEEDRATE/60:0.5} mm/s old: {self.old_feedrate/60:0.5} mm/s")
+            self.modify_move(command, args, comment, new_feedrate)
+        elif (
             SLOW_BEFORE == 'any'
             and line_analysis.delta[3] > 0
             and hasattr(line_analysis, 'e_to_pause')
