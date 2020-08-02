@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# temptower.py -- Add temperature changes to temperature tower gcode
+# la_tower.py -- Add linear advance factor changes to temperature tower gcode
 # Copyright (C) 2020 Hazel Victoria Campbell
 
 # This program is free software: you can redistribute it and/or modify
@@ -17,14 +17,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-Usage: ./temptower.py <input.gcode> <start_temp> <end_temp> <sections>
-Usage: ./temptower.py Temp_Tower.gcode 180 230 8
+Usage: ./la_tower.py <input.gcode> <start_k> <end_k> <sections>
+Usage: ./la_tower.py Temp_Tower.gcode 180 230 8
 """
-
-EXTRA_Z_HOP = 0
-SLOW_E_MM = -1 # disable for now
-SLOW_XY_RATE = 2*60 # in mm per minute for some reason
-SLOW_BEFORE = 'retract' # retract or any
 
 import sys
 import os
@@ -32,10 +27,10 @@ import re
 
 assert os.path.exists(sys.argv[1])
 input_file = sys.argv[1]
-start_temp = int(sys.argv[2])
-end_temp = int(sys.argv[3])
-assert start_temp < end_temp
-floors = int(sys.argv[4])
+start_k = float(sys.argv[2])
+end_k = float(sys.argv[3])
+assert start_k < end_k
+floors = float(sys.argv[4])
 
 gcode = None
 
@@ -44,13 +39,9 @@ with open(input_file, 'r') as fh:
 
 gcode = list(map(str.rstrip, gcode))
 
-DWELL_TIME_MS = 1000 * 5
-
-
-output_file = '.temptower.'.join(
+output_file = '.la_tower.'.join(
     input_file.rsplit('.', 1)
     )
-
 
 comment = re.compile(r';.*')
 
@@ -326,7 +317,7 @@ class Mutator(Machine):
     
     def overriden(self, command, args, comment):
         self.echo('', [], 
-                  'overriden by temptower.py: '
+                  'overriden by la_tower.py: '
                   + self.deparse(command, args, comment)
                   )
 
@@ -358,15 +349,24 @@ class Mutator(Machine):
     def relative(self, command, args, comment=''):
         super().relative(command, args, comment)
         self.echo(command, args, comment)
+    
+    def set_temp(self, command, args, comment=''):
+        super().set_temp(command, args, comment)
+        self.echo(command, args, comment)
+
+    def preheat(self, command, args, comment=''):
+        super().preheat(command, args, comment)
+        self.echo(command, args, comment)
 
     def insert(self, new):
-        self.output(f"{new} ; added by temptower.py")
+        self.output(f"{new} ; added by la_tower.py")
     
     @property
     def outputting(self):
         return hasattr(self, 'fh')
     
     def generate(self, output_file):
+        self.output_filename = output_file
         print(f"Saving output to {output_file}")
         self.fh = open(output_file, 'w')
         self.run()
@@ -377,110 +377,29 @@ class Mutator(Machine):
     def output(self, command):
         print(command, file=self.fh)
     
-class ExtrusionDecelerator(Mutator):
-    def modify_move(self, command, args, comment, feedrate):
-        found_f = False
-        new_args = list()
-        for argi in range(len(args)):
-            arg = args[argi]
-            if arg[0] == 'F':
-                found_f = True
-                arg = f"F{feedrate:0.5}"
-            new_args.append(arg)
-        if not found_f:
-            new_args.append(f"F{feedrate:0.5}")
-        super().move(command, new_args, comment)
-
-    def maybe_modify_move(self, command, args, comment):
-        line_analysis = self.analysis[self.line_number]
-        if hasattr(line_analysis, 'feedrate'):
-            self.old_feedrate = line_analysis.feedrate
-        modifies_feedrate = False
-        moves_head = False
-        extrudes = False
-        for arg in args:
-            if arg[0] == 'F':
-                modifies_feedrate = True
-            elif arg[0] == 'X' or arg[0] == 'Y' or arg[0] == 'Z':
-                moves_head = True
-            elif arg[0] == 'E':
-                extrudes = True
-        if (
-            SLOW_BEFORE == 'any'
-            and line_analysis.delta[3] > 0
-            and hasattr(line_analysis, 'e_to_pause')
-            and line_analysis.e_to_pause <= SLOW_E_MM
-            and hasattr(line_analysis, 'feedrate')
-            and line_analysis.feedrate is not None
-            and line_analysis.feedrate > SLOW_XY_RATE
-            and moves_head
-            ):
-            new_feedrate = (
-                self.old_feedrate * line_analysis.e_to_pause
-                + SLOW_XY_RATE * (SLOW_E_MM - line_analysis.e_to_pause)
-                ) / SLOW_E_MM
-            if self.outputting:
-                self.output(f"; feedrate: old: {self.old_feedrate/60} mm/s new: {new_feedrate/60} mm/s")
-            self.modify_move(command, args, comment, new_feedrate)
-        elif (
-            SLOW_BEFORE == 'retract'
-            and line_analysis.delta[3] > 0
-            and hasattr(line_analysis, 'e_to_retract')
-            and line_analysis.e_to_retract <= SLOW_E_MM
-            and hasattr(line_analysis, 'feedrate')
-            and line_analysis.feedrate is not None
-            and line_analysis.feedrate > SLOW_XY_RATE
-            and moves_head
-            ):
-            new_feedrate = (
-                self.old_feedrate * line_analysis.e_to_retract
-                + SLOW_XY_RATE * (SLOW_E_MM - line_analysis.e_to_retract)
-                ) / SLOW_E_MM
-            if self.outputting:
-                self.output(f"; feedrate: old: {self.old_feedrate/60} mm/s new: {new_feedrate/60} mm/s")
-            self.modify_move(command, args, comment, new_feedrate)
-        elif (
-            hasattr(self, 'old_feedrate')
-            and self.old_feedrate != self.feedrate
-            and not modifies_feedrate
-            and moves_head
-            ):
-            self.modify_move(command, args, comment, self.old_feedrate)
-        else:
-            super().move(command, args, comment)
+    def __init__(self, command):
+        super().__init__(command)
+        self.logging_started = False
     
-    def move(self, command, args, comment=''):
-        if hasattr(self, 'analysis') and self.outputting:
-            self.maybe_modify_move(command, args, comment)
-        else:
-            super().move(command, args, comment='')
-
-class TemperatureTower(ExtrusionDecelerator):
-    def set_temp(self, command, args, comment = ''):
-        if len(self.layers) > 1:
-            self.overriden(command, args, comment)
-            if hasattr(self, 'fh'):
-                self.insert_set_temp()
-        else:
-            self.echo(command, args, comment)
+    def run_line(self, line):
+        if self.outputting and not self.logging_started:
+            stem = self.output_filename.rsplit('.', 0)[0]
+            log_filename = 'print.log'
+            #self.output(f"M928 {log_filename}")
+            #self.output(f"M111 3")
+            self.logging_started = True
+        super().run_line(line)
     
-    def preheat(self, command, args, comment = ''):
-        if len(self.layers) > 1:
-            self.overriden(command, args, comment)
-            if hasattr(self, 'fh'):
-                self.insert_set_temp()
-        else:
-            self.echo(command, args, comment)
-    
+class LinearAdvanceTower(Mutator):
     def z_lift(self):
         if self.ran_once and not self.retracting and not self.z_hopping:
-            self.maybe_insert_temp()
+            self.maybe_insert_k()
     
     def retract(self):
         super().retract()
         self.echo('', [], f"Retract {self.prev_e}-{self.position[3]}")
         if self.ran_once and self.retracting and not self.z_hopping:
-            self.maybe_insert_temp()
+            self.maybe_insert_k()
     
     def z_hop(self):
         super().z_hop()
@@ -488,21 +407,21 @@ class TemperatureTower(ExtrusionDecelerator):
         if self.ran_once and self.z_hopping:
             assert self.retracted
             assert self.z_up
-            self.maybe_insert_temp()
+            self.maybe_insert_k()
     
     @property
     def cur_height(self):
         return self.material_max[2]
     
     @property
-    def temp_range(self):
-        return float(self.end_temp - self.start_temp)
+    def k_range(self):
+        return float(self.end_k - self.start_k)
     
     @property
-    def temp_inc(self):
-        return self.temp_range/(self.floors-1)
+    def k_inc(self):
+        return self.k_range/(self.floors-1)
         
-    def __init__(self, gcode, start_temp, end_temp, floors):
+    def __init__(self, gcode, start_k, end_k, floors):
         super().__init__(gcode)
         super().run()
         self.bounding_max = self.material_max
@@ -520,16 +439,16 @@ class TemperatureTower(ExtrusionDecelerator):
         print(f"Floor height: {self.floor_size}")
         assert self.tower_height > 0
         self.cur_floor = 0
-        self.start_temp = start_temp
-        self.end_temp = end_temp
+        self.start_k = start_k
+        self.end_k = end_k
         self.floors = floors
-        self.temp_has_been_overriden = False
-        print(f"Temperature change each floor: {self.temp_inc}")
+        self.k_has_been_overriden = False
+        print(f"Temperature change each floor: {self.k_inc}")
 
     @property
-    def cur_temp(self):
-        return int(
-            self.start_temp + self.temp_inc * (
+    def cur_k(self):
+        return float(
+            self.start_k + self.k_inc * (
                 max(min(self.cur_floor, self.floors), 0)
                 )
             )
@@ -539,53 +458,36 @@ class TemperatureTower(ExtrusionDecelerator):
         #print(f"{self.cur_floor} {self.floor_size}")
         return (self.cur_floor + 1) * self.floor_size
 
-    def set_temp_command(self,):
-        return f"M104 S{self.cur_temp}"
+    def set_k_command(self,):
+        return f"M900 K{self.cur_k:0.5}"
         # Using R instead of S here in case of cooling direction
-        # return f"M109 R{self.cur_temp}"
+        # return f"M109 R{self.cur_k}"
 
-    def insert_dwell(self):
-        self.insert('G4 P5000')
-
-    def insert_set_temp(self):
-        if EXTRA_Z_HOP:
-            assert not self.is_relative
-            self.echo(
-                'G1',
-                [f"Z{self.position[2] + EXTRA_Z_HOP}"],
-                "Extra z-lift (z-hop) to prevent pooling"
-                )
-        self.insert(self.set_temp_command())
-        #self.insert_dwell()
-        if EXTRA_Z_HOP:
-            assert not self.is_relative
-            self.echo(
-                'G1',
-                [f"Z{self.position[2]}"],
-                "Undo extra nozzle lift"
-                )
-        self.temp_has_been_overriden = True
+    def insert_set_k(self):
+        self.output(f"M400 ; wait for gcode buffer to finish moves")
+        self.insert(self.set_k_command())
+        self.k_has_been_overriden = True
     
-    def maybe_insert_temp(self):
+    def maybe_insert_k(self):
         if not self.outputting:
             return
         if self.cur_height > self.cur_floor_limit or (
-            len(self.layers) > 1 and not self.temp_has_been_overriden
+            len(self.layers) > 1 and not self.k_has_been_overriden
             ):
             if self.cur_height > self.cur_floor_limit:
                 self.cur_floor += 1
-            print(f"Step {self.cur_floor} at height {self.cur_height} temp {self.cur_temp}")
-            self.output(f"; temptower.py: height {self.cur_height}")
-            self.output(f"; temptower.py: step {self.cur_floor}")
-            self.output(f"; temptower.py: temp {self.cur_temp}")
-            self.insert_set_temp()
-            self.insert(f"M117 Tower Floor {self.cur_floor+1}/{self.floors}")
+            print(f"Step {self.cur_floor} at height {self.cur_height} k= {self.cur_k:0.5}")
+            self.output(f"; la_tower.py: height {self.cur_height}")
+            self.output(f"; la_tower.py: step {self.cur_floor}")
+            self.output(f"; la_tower.py: linear advance k={self.cur_k}")
+            self.insert_set_k()
+            self.insert(f"M117 Tower Floor {self.cur_floor+1}/{self.floors} K={self.cur_k:0.2}")
     
     def generate(self, output_file):
         super().generate(output_file)
         print(f"{self.cur_floor} {self.floors}")
         assert self.cur_floor == self.floors - 1
 
-temp_tower = TemperatureTower(gcode, start_temp, end_temp, floors)
-temp_tower.generate(output_file)
+la_tower = LinearAdvanceTower(gcode, start_k, end_k, floors)
+la_tower.generate(output_file)
 

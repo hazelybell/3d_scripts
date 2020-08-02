@@ -86,7 +86,7 @@
  */
 
 // Show the Marlin bootscreen on startup. ** ENABLE FOR PRODUCTION **
-#define SHOW_BOOTSCREEN
+//#define SHOW_BOOTSCREEN
 
 // Show the bitmap in Marlin/_Bootscreen.h on startup.
 //#define SHOW_CUSTOM_BOOTSCREEN
@@ -502,9 +502,14 @@
   
   // Rob Mendon / 3D Printing Canada uses this for CR-20 Pro - HVC
   // CR20 Pro
-  #define  DEFAULT_Kp 20.84
-  #define  DEFAULT_Ki 1.96
-  #define  DEFAULT_Kd 55.47
+  // #define  DEFAULT_Kp 20.84
+  // #define  DEFAULT_Ki 1.96
+  // #define  DEFAULT_Kd 55.47
+  
+  // Values found by runing M303 autotune on my machine - HVC
+  #define DEFAULT_Kp 20.36
+  #define DEFAULT_Ki 1.42
+  #define DEFAULT_Kd 72.96
 
   // Ultimaker
   //#define DEFAULT_Kp 22.2
@@ -540,7 +545,7 @@
  * heater. If your configuration is significantly different than this and you don't understand
  * the issues involved, don't use bed PID until someone else verifies that your hardware works.
  */
-//#define PIDTEMPBED
+#define PIDTEMPBED
 
 //#define BED_LIMIT_SWITCHING
 
@@ -559,15 +564,20 @@
   // Marlin example firmware 020006 uses this for CR-20 Pro - HVC
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  #define DEFAULT_bedKp 10.00
-  #define DEFAULT_bedKi .023
-  #define DEFAULT_bedKd 305.4
+//   #define DEFAULT_bedKp 10.00
+//   #define DEFAULT_bedKi .023
+//   #define DEFAULT_bedKd 305.4
   
   // Rob Mendon / 3D Printing Canada uses this for CR-20 Pro - HVC
   // CR20 Pro
 //   #define DEFAULT_bedKp 110.60
 //   #define DEFAULT_bedKi 21.78
 //   #define DEFAULT_bedKd 374.50
+
+// Settings from M303 E-1 on my machine... - HVC
+#define DEFAULT_bedKp 145.46
+#define DEFAULT_bedKi 27.72
+#define DEFAULT_bedKd 508.80
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from pidautotune
@@ -687,6 +697,8 @@
 // Marlin example firmware 020006 uses false for XYZ MAX endstops
 // Rob Mendon / 3D Printing Canada uses true for XYZ MAX endstops
 // I'm not sure which is correct. - HVC
+// The machine has no max endstops, so I'm not sure this setting
+// even has an effect - HVC
 
 // Mechanical endstop with COM to ground and NC to Signal uses "false" here (most common setup).
 #define X_MIN_ENDSTOP_INVERTING false // Set to true to invert the logic of the endstop.
@@ -840,6 +852,9 @@
  * value set here, it may happen instantaneously.
  */
 // Enabling this (disabling junction deviation) to test if it improves reliability - HVC
+// Didn't seem to have an effect, but I'm leaving it enabled anyway,
+// to allow for different axes with different jerk settings, and
+// to allow overriding jerk settings in g-code. - HVC
 #define CLASSIC_JERK
 #if ENABLED(CLASSIC_JERK)
 // Marlin example firmware 020006 uses 10.0 X and Y-Jerk
@@ -1054,15 +1069,17 @@
 // Marlin example firmware 020006 uses (-43,-5,0) for probe offset
 // Rob Mendon / 3D Printing Canada uses (-40,-10,0) for probe offset
 // I'm not sure which is correct. - HVC
-// However, on my machine, the Z offset is more like -2.02... - HVC
-#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.02 }
+// However, on my machine, the Z offset is more like -2.1... - HVC
+#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.12 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
 #define PROBING_MARGIN 10
 
 // X and Y axis travel speed (mm/m) between probes
-#define XY_PROBE_SPEED 8000
+// Default is 8000 (133*60) - HVC
+// Set this to 150*60 for readability mostly - HVC
+#define XY_PROBE_SPEED (150*60)
 
 // Feedrate (mm/m) for the first approach when double-probing (MULTIPLE_PROBING == 2)
 #define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
@@ -1101,7 +1118,9 @@
  * Example: `M851 Z-5` with a CLEARANCE of 4  =>  9mm from bed to nozzle.
  *     But: `M851 Z+1` with a CLEARANCE of 2  =>  2mm from bed to nozzle.
  */
-#define Z_CLEARANCE_DEPLOY_PROBE   10 // Z Clearance for Deploy/Stow
+// Machine doesn't use deploy/stowable probe so I'm setting this to 2
+// - HVC
+#define Z_CLEARANCE_DEPLOY_PROBE   2 // Z Clearance for Deploy/Stow
 // Rob Mendon / 3D Printing Candada uses 4 for Z_CLEARANCE_BETWEEN_PROBES
 // Marlin example config 020006 uses 5 for Z_CLEARANCE_BETWEEN_PROBES
 // Both use 5 for Z_CLEARANCE_MULTI_PROBE
@@ -1385,7 +1404,8 @@
 // Rob Mendon / 3D Printing Candada uses 4
 // Marlin example config 020006 uses 3
 // I'm going to try 4 in a vain attempt to improve accuracy - HVC
-  #define GRID_MAX_POINTS_X 4
+// Switched to tempered glass, so I'm reducing this to 3 again - HVC
+  #define GRID_MAX_POINTS_X 3
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   // Probe along the Y axis, advancing X after each column

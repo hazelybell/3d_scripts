@@ -39,6 +39,7 @@ source venv/bin/activate
 pip install --upgrade platformio
 
 rm -rf .pio/build
+# rm -rf ~/.platformio/packages
 
 if [[ "$config" -ef "Marlin" ]] ; then
 	echo Not copying config files over themselves >&2
@@ -52,7 +53,7 @@ else
 	done
 fi
 
-platformio run
+platformio run --verbose --target debug
 
 ls .pio/build/*/firmware.elf
 ls .pio/build/*/firmware.hex
