@@ -25,7 +25,9 @@ EXTRA_Z_HOP = 0
 SLOW_E_MM = -1 # disable for now
 SLOW_XY_RATE = 2*60 # in mm per minute for some reason
 SLOW_BEFORE = 'retract' # retract or any
-WIPE_XY_FEEDRATE = 2.5*60 # in mm per minute
+WIPE_XY_FEEDRATE = -2.5*60 # in mm per minute
+RETRACT_BEFORE_WIPE = True
+REORDERED_WIPE_FEEDRATE = 1.0*60 # in mm per minute
 
 import sys
 import os
@@ -48,7 +50,7 @@ gcode = list(map(str.rstrip, gcode))
 DWELL_TIME_MS = 1000 * 5
 
 
-output_file = '.temptower.'.join(
+output_file = '_pp.'.join(
     input_file.rsplit('.', 1)
     )
 
@@ -190,6 +192,18 @@ class Machine:
         if self.line_analysis.delta[3] == 0:
             self.extruder_pause()
     
+    def characterize_move(self, command, args, comment=''):
+        self.line_analysis.modifies_feedrate = False
+        self.line_analysis.moves_head = False
+        self.line_analysis.moves_extruder = False
+        for arg in args:
+            if arg[0] == 'F':
+                self.line_analysis.modifies_feedrate = True
+            elif arg[0] == 'X' or arg[0] == 'Y' or arg[0] == 'Z':
+                self.line_analysis.moves_head = True
+            elif arg[0] == 'E':
+                self.line_analysis.moves_extruder = True
+    
     def move(self, command, args, comment=''):
         for arg in args:
             if arg[0] == 'F':
@@ -205,6 +219,7 @@ class Machine:
             self.line_analysis.feedrate = self.feedrate
         self.detect_retract()
         self.detect_wipe()
+        self.characterize_move(command, args, comment='')
     
     def offset_axis(self, axis, where):
         if self.position[axis] is None:
@@ -409,16 +424,6 @@ class ExtrusionDecelerator(Mutator):
         line_analysis = self.analysis[self.line_number]
         if hasattr(line_analysis, 'feedrate'):
             self.old_feedrate = line_analysis.feedrate
-        modifies_feedrate = False
-        moves_head = False
-        extrudes = False
-        for arg in args:
-            if arg[0] == 'F':
-                modifies_feedrate = True
-            elif arg[0] == 'X' or arg[0] == 'Y' or arg[0] == 'Z':
-                moves_head = True
-            elif arg[0] == 'E':
-                extrudes = True
         if (
             line_analysis.wipe
             and hasattr(line_analysis, 'feedrate')
@@ -426,7 +431,7 @@ class ExtrusionDecelerator(Mutator):
             and line_analysis.feedrate > SLOW_XY_RATE
             ):
             self.output(f"; wipe feedrate: {WIPE_XY_FEEDRATE/60:0.5} mm/s old: {self.old_feedrate/60:0.5} mm/s")
-            self.modify_move(command, args, comment, new_feedrate)
+            self.modify_move(command, args, comment, WIPE_XY_FEEDRATE)
         elif (
             SLOW_BEFORE == 'any'
             and line_analysis.delta[3] > 0
@@ -464,8 +469,8 @@ class ExtrusionDecelerator(Mutator):
         elif (
             hasattr(self, 'old_feedrate')
             and self.old_feedrate != self.feedrate
-            and not modifies_feedrate
-            and moves_head
+            and not line_analysis.modifies_feedrate
+            and line_analysis.moves_head
             ):
             self.modify_move(command, args, comment, self.old_feedrate)
         else:
@@ -479,6 +484,8 @@ class ExtrusionDecelerator(Mutator):
 
 class TemperatureTower(ExtrusionDecelerator):
     def set_temp(self, command, args, comment = ''):
+        if 'S0' in args or 'R0' in args:
+            super().set_temp(command, args, comment)
         if len(self.layers) > 1:
             self.overriden(command, args, comment)
             if hasattr(self, 'fh'):
@@ -487,6 +494,8 @@ class TemperatureTower(ExtrusionDecelerator):
             self.echo(command, args, comment)
     
     def preheat(self, command, args, comment = ''):
+        if 'S0' in args:
+            super().set_temp(command, args, comment)
         if len(self.layers) > 1:
             self.overriden(command, args, comment)
             if hasattr(self, 'fh'):
@@ -500,7 +509,7 @@ class TemperatureTower(ExtrusionDecelerator):
     
     def retract(self):
         super().retract()
-        self.echo('', [], f"Retract {self.prev_e}-{self.position[3]}")
+        #self.echo('', [], f"Retract {self.prev_e}-{self.position[3]}")
         if self.ran_once and self.retracting and not self.z_hopping:
             self.maybe_insert_temp()
     
@@ -607,6 +616,56 @@ class TemperatureTower(ExtrusionDecelerator):
         super().generate(output_file)
         print(f"{self.cur_floor} {self.floors}")
         assert self.cur_floor == self.floors - 1
+
+class RetractBeforeWipe(Machine):
+    def reorder_retract(self, li):
+        for lj in reversed(range(li)): # implied max of li-1 !!!
+            line_analysis = self.analysis[lj]
+            if (
+                hasattr(line_analysis, 'moves_head')
+                and line_analysis.moves_head
+                and not line_analysis.moves_extruder
+                ):
+                old = self.new_gcode[lj]
+                args = old.split(';', )[0].split()
+                new_args = list()
+                found_f = False
+                for argi in range(len(args)):
+                    arg = args[argi]
+                    if arg[0] == 'F':
+                        found_f = True
+                        arg = f"F{REORDERED_WIPE_FEEDRATE:0.5}"
+                    new_args.append(arg)
+                if not found_f:
+                    new_args.append(f"F{REORDERED_WIPE_FEEDRATE:0.5}")
+                new = ' '.join(new_args + [';', 'slowed'])
+                self.new_gcode[lj] = self.new_gcode[lj+1]
+                self.new_gcode[lj+1] = new
+            else:
+                break
+        if lj - li + 1 < 0:
+            self.retractions_moved += 1
+            self.new_gcode[lj+1] = self.new_gcode[lj+1] + (
+                f" ; Moved {lj-li+1}"
+                )
+    
+    def reorder(self):
+        self.new_gcode = list(self.gcode)
+        self.retractions_moved = 0
+        self.run()
+        for li in range(len(self.analysis)):
+            line_analysis = self.analysis[li]
+            if (
+                hasattr(line_analysis, 'retract')
+                and line_analysis.retract
+                and not line_analysis.moves_head
+                ):
+                self.reorder_retract(li)
+        print(f"Moved {self.retractions_moved} retractions")
+        return self.new_gcode
+
+if RETRACT_BEFORE_WIPE:
+    gcode = RetractBeforeWipe(gcode).reorder()
 
 temp_tower = TemperatureTower(gcode, start_temp, end_temp, floors)
 temp_tower.generate(output_file)
