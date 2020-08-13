@@ -121,7 +121,8 @@
  *
  * :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
-#define BAUDRATE 250000 // from Rob Mendon / 3D Printing Canada
+// changed to 115200 to match bootloader frequency
+#define BAUDRATE 115200
 
 // Enable the Bluetooth serial interface on AT90USB devices
 //#define BLUETOOTH
@@ -444,7 +445,8 @@
 #define TEMP_WINDOW              1  // (°C) Temperature proximity for the "temperature reached" timer
 #define TEMP_HYSTERESIS          3  // (°C) Temperature proximity considered "close enough" to the target
 
-#define TEMP_BED_RESIDENCY_TIME 10  // (seconds) Time to wait for bed to "settle" in M190
+// Changed from 10 to 1 since the PID loop does such a good job. - HVC
+#define TEMP_BED_RESIDENCY_TIME  1  // (seconds) Time to wait for bed to "settle" in M190
 #define TEMP_BED_WINDOW          1  // (°C) Temperature proximity for the "temperature reached" timer
 #define TEMP_BED_HYSTERESIS      3  // (°C) Temperature proximity considered "close enough" to the target
 
@@ -507,9 +509,11 @@
   // #define  DEFAULT_Kd 55.47
   
   // Values found by runing M303 autotune on my machine - HVC
-  #define DEFAULT_Kp 20.36
-  #define DEFAULT_Ki 1.42
-  #define DEFAULT_Kd 72.96
+  // Decreased artificially due to oscillation - HVC
+  #define DEFAULT_Kp 30.0
+  #define DEFAULT_Ki 3.75
+  // Increased artificially due to oscillation - HVC
+  #define DEFAULT_Kd 100.0
 
   // Ultimaker
   //#define DEFAULT_Kp 22.2
@@ -575,9 +579,11 @@
 //   #define DEFAULT_bedKd 374.50
 
 // Settings from M303 E-1 on my machine... - HVC
-#define DEFAULT_bedKp 145.46
-#define DEFAULT_bedKi 27.72
-#define DEFAULT_bedKd 508.80
+#define DEFAULT_bedKp 100.14
+// Increased artificially to shorten time to temperature.
+#define DEFAULT_bedKi 20.0
+// I'm limiting this artificially to test - HVC
+#define DEFAULT_bedKd 200.0
 
   //120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   //from pidautotune
@@ -592,7 +598,9 @@
   //#define PID_DEBUG             // Sends debug data to the serial port. Use 'M303 D' to toggle activation.
   //#define PID_OPENLOOP          // Puts PID in open loop. M104/M140 sets the output power from 0 to PID_MAX
   //#define SLOW_PWM_HEATERS      // PWM with very low frequency (roughly 0.125Hz=8s) and minimum state time of approximately 1s useful for heaters driven by a relay
-  #define PID_FUNCTIONAL_RANGE 10 // If the temperature difference between the target temperature and the actual temperature
+  // Adjusted down to reduce heat/cool time - HVC
+  // Adjusted back up because of oscillations on head - HVC
+  #define PID_FUNCTIONAL_RANGE 7 // If the temperature difference between the target temperature and the actual temperature
                                   // is more than PID_FUNCTIONAL_RANGE then the PID will be shut off and the heater will be set to min/max.
 #endif
 
@@ -890,6 +898,8 @@
 // Marlin example firmware 020006 uses 0.08 for junction deviation mm
 // Rob Mendon / 3D Printing Canada uses 0.02 for junction deviation mm
 // I'm not sure which is correct. - HVC
+// It's likely that 0.02 is too small, based on formula from the link
+// above. - HVC
 
   #define JUNCTION_DEVIATION_MM 0.02  // (mm) Distance from real junction edge
   #define JD_HANDLE_SMALL_SEGMENTS    // Use curvature estimation instead of just the junction angle
@@ -904,7 +914,7 @@
  *
  * See https://github.com/synthetos/TinyG/wiki/Jerk-Controlled-Motion-Explained
  */
-//#define S_CURVE_ACCELERATION
+#define S_CURVE_ACCELERATION
 
 //===========================================================================
 //============================= Z Probe Options =============================
@@ -1070,7 +1080,8 @@
 // Rob Mendon / 3D Printing Canada uses (-40,-10,0) for probe offset
 // I'm not sure which is correct. - HVC
 // However, on my machine, the Z offset is more like -2.1... - HVC
-#define NOZZLE_TO_PROBE_OFFSET { -43, -5, -2.12 }
+// I redid the nozzle and now it's more like -3.1...
+#define NOZZLE_TO_PROBE_OFFSET { -43.5, -5, -3.1 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1087,7 +1098,9 @@
 // Feedrate (mm/m) for the "accurate" probe of each point
 // #define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 2)
 // Vain attempt to improve accuracy... - HVC
-#define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 4)
+// #define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 4)
+// Vain attempt to improve accuracy #2... - HVC
+#define Z_PROBE_SPEED_SLOW Z_PROBE_SPEED_FAST
 
 /**
  * Multiple Probing
@@ -1101,8 +1114,8 @@
 //#define MULTIPLE_PROBING 2
 //#define EXTRA_PROBING    1
 // Vain attempt to improve accuracy... - HVC
-#define MULTIPLE_PROBING 3
-#define EXTRA_PROBING    1
+#define MULTIPLE_PROBING 4
+#define EXTRA_PROBING    3
 
 /**
  * Z probes require clearance when deploying, stowing, and moving between
@@ -1127,11 +1140,12 @@
 // 4 will probably work... - HVC
 // 3 will probably work... - HVC
 // 2 will probably work... - HVC
+// 1 will probably work... - HVC
 #define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
 #define Z_CLEARANCE_MULTI_PROBE     2 // Z Clearance between multiple probes
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
-#define Z_PROBE_LOW_POINT          -2 // Farthest distance below the trigger-point to go before stopping
+#define Z_PROBE_LOW_POINT          -3 // Farthest distance below the trigger-point to go before stopping
 
 // For M851 give a range for adjusting the Z probe offset
 #define Z_PROBE_OFFSET_RANGE_MIN -20
@@ -1232,7 +1246,8 @@
 #define X_MIN_POS 0
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
-#define X_MAX_POS X_BED_SIZE
+// Modified from X_BED_SIZE for extra danger - HVC
+#define X_MAX_POS X_BED_SIZE + 15
 #define Y_MAX_POS Y_BED_SIZE
 // Rob Mendon / 3D Printing Candada uses 320
 // Marlin example config 020006 uses 250
@@ -1405,7 +1420,7 @@
 // Marlin example config 020006 uses 3
 // I'm going to try 4 in a vain attempt to improve accuracy - HVC
 // Switched to tempered glass, so I'm reducing this to 3 again - HVC
-  #define GRID_MAX_POINTS_X 3
+  #define GRID_MAX_POINTS_X 4
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
   // Probe along the Y axis, advancing X after each column
@@ -1521,7 +1536,8 @@
 // Marlin example config 020006 uses 20*60 for XY, 4*60 for Z
 // The slower speeds are probably fine - HVC
 #define HOMING_FEEDRATE_XY (20*60)
-#define HOMING_FEEDRATE_Z  (4*60)
+// increased from 4 - HVC
+#define HOMING_FEEDRATE_Z  (10*60)
 
 // Validate that endstops are triggered on homing moves
 #define VALIDATE_HOMING_ENDSTOPS
@@ -1630,8 +1646,8 @@
 
 // Preheat Constants
 #define PREHEAT_1_LABEL       "PLA"
-#define PREHEAT_1_TEMP_HOTEND 190 // Custom - HVC
-#define PREHEAT_1_TEMP_BED     60 // Custom - HVC
+#define PREHEAT_1_TEMP_HOTEND 220 // Custom - HVC
+#define PREHEAT_1_TEMP_BED     40 // Custom - HVC
 // Rob Mendon / 3D Printing Candada uses 0 fan speed during preheat
 // Marlin example config 020006 uses 255 during preheat
 // I'm not sure why you'd use the fan during preheat - HVC

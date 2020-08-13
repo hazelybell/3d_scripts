@@ -53,6 +53,8 @@ else
 	done
 fi
 
+git commit -a || true
+
 platformio run --verbose --target debug
 
 ls .pio/build/*/firmware.elf

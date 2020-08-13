@@ -1,0 +1,10 @@
+M201 X500.00 Y500.00 Z100.00 E1000.00 ;Setup machine max acceleration
+M203 X250.00 Y250.00 Z5.00 E25.00 ;Setup machine max feedrate
+
+G28 ; Home
+G92 E0 ; Reset extruder
+G1 X0 Y0 Z0.2 F600
+G1 X0 Y10 E0.06652
+G1 X10 Y10 E0.13304
+G1 X10 Y0 E0.19956
+G1 X0 Y0 E0.26608
