@@ -305,7 +305,8 @@
   #if ENABLED(AUTOTEMP_PROPORTIONAL)
     #define AUTOTEMP_MIN_P      0 // (°C) Added to the target temperature
     #define AUTOTEMP_MAX_P      5 // (°C) Added to the target temperature
-    #define AUTOTEMP_FACTOR_P   0.5 // Apply this F parameter by default (overridden by M104/M109 F)
+    // Reduced from 1, seems excessive? - HVC
+    #define AUTOTEMP_FACTOR_P   0.25 // Apply this F parameter by default (overridden by M104/M109 F)
   #endif
 #endif
 
@@ -447,7 +448,8 @@
  *   USE_OCR2A_AS_TOP sacrifices duty cycle control resolution to achieve this broader range of frequencies.
  */
 #if ENABLED(FAST_PWM_FAN)
-  //#define FAST_PWM_FAN_FREQUENCY 31400
+    // Modified from 31400 to 30 - HVC
+    #define FAST_PWM_FAN_FREQUENCY 30
   //#define USE_OCR2A_AS_TOP
 #endif
 
@@ -648,7 +650,8 @@
 //#define SENSORLESS_BACKOFF_MM  { 2, 2 }     // (mm) Backoff from endstops before sensorless homing
 
 #define HOMING_BUMP_MM      { 5, 5, 2 }       // (mm) Backoff from endstops after first bump
-#define HOMING_BUMP_DIVISOR { 2, 2, 4 }       // Re-Bump Speed Divisor (Divides the Homing Feedrate)
+// Changed from { 2, 2, 4 } in a vain attempt to improve accuracy...
+#define HOMING_BUMP_DIVISOR { 4, 4, 4 }       // Re-Bump Speed Divisor (Divides the Homing Feedrate)
 
 //#define HOMING_BACKOFF_POST_MM { 2, 2, 2 }  // (mm) Backoff from endstops after homing
 
@@ -852,8 +855,7 @@
 // Increase the slowdown divisor for larger buffer sizes.
 #define SLOWDOWN
 #if ENABLED(SLOWDOWN)
-// Increased from 2 to 4 - HVC
-  #define SLOWDOWN_DIVISOR 4
+  #define SLOWDOWN_DIVISOR 2
 #endif
 
 /**
@@ -863,7 +865,8 @@
  * Use M201 F<freq> G<min%> to change limits at runtime.
  */
 // I think this one needs to be lower. Default is 10
-#define XY_FREQUENCY_LIMIT      2 // (Hz) Maximum frequency of small zigzag infill moves. Set with M201 F<hertz>.
+// 2 is still too much due ot the table... - HVC
+#define XY_FREQUENCY_LIMIT      1 // (Hz) Maximum frequency of small zigzag infill moves. Set with M201 F<hertz>.
 #ifdef XY_FREQUENCY_LIMIT
   #define XY_FREQUENCY_MIN_PERCENT 5 // (percent) Minimum FR percentage to apply. Set with M201 G<min%>.
 #endif
@@ -1048,7 +1051,8 @@
 // @section lcd
 
 #if EITHER(ULTIPANEL, EXTENSIBLE_UI)
-  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60, 2*60 } // Feedrates for manual moves along X, Y, Z, E from panel
+  // increased E from 2*60 - HVC
+  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60, 10*60 } // Feedrates for manual moves along X, Y, Z, E from panel
   #define SHORT_MANUAL_Z_MOVE 0.025 // (mm) Smallest manual Z move (< 0.1mm)
   #if ENABLED(ULTIPANEL)
     #define MANUAL_E_MOVES_RELATIVE // Display extruder move distance rather than "position"
@@ -1060,9 +1064,11 @@
 #define ENCODER_RATE_MULTIPLIER
 #if ENABLED(ENCODER_RATE_MULTIPLIER)
   // Increased from 30 to 50 - HVC
-  #define ENCODER_10X_STEPS_PER_SEC   50  // (steps/s) Encoder rate for 10x speed
+  // Increased to 60 - HVC
+  #define ENCODER_10X_STEPS_PER_SEC   60  // (steps/s) Encoder rate for 10x speed
   // Increased from 80 to 100 - HVC
-  #define ENCODER_100X_STEPS_PER_SEC  100  // (steps/s) Encoder rate for 100x speed
+  // Increased to 120 - HVC
+  #define ENCODER_100X_STEPS_PER_SEC  120  // (steps/s) Encoder rate for 100x speed
 #endif
 
 // Play a beep when the feedrate is changed from the Status Screen
@@ -1075,7 +1081,8 @@
 #if HAS_LCD_MENU
 
   // Include a page of printer information in the LCD Main Menu
-  #define LCD_INFO_MENU
+  // Disabled to save SRAM - HVC
+  // #define LCD_INFO_MENU
   #if ENABLED(LCD_INFO_MENU)
     //#define LCD_PRINTER_INFO_IS_BOOTSCREEN // Show bootscreen(s) instead of Printer Info pages
   #endif
@@ -1170,7 +1177,7 @@
 // Rob Mendon / 3D Printing Candada uses G27 "park toolhead"
 // Marlin example config 020006 uses G28XY "auto home"
 // I'm going to prefer G27 - HVC
-  #define EVENT_GCODE_SD_STOP "G27"       // G-code to run on Stop Print (e.g., "G28XY" or "G27")
+  #define EVENT_GCODE_SD_ABORT "G27"       // G-code to run on Stop Print (e.g., "G28XY" or "G27")
 
   #if ENABLED(PRINTER_EVENT_LEDS)
     #define PE_LEDS_COMPLETED_TIME  (30*60) // (seconds) Time to keep the LED "done" color before restoring normal illumination
@@ -1359,11 +1366,12 @@
   //#define DOGM_SD_PERCENT
 
   // Save many cycles by drawing a hollow frame or no frame on the Info Screen
-  //#define XYZ_NO_FRAME
+  // Seems good to me - HVC
+  #define XYZ_NO_FRAME
 // Rob Mendon / 3D Printing Candada disables this feature
 // Marlin example config 020006 uses this feature
 // Seems good to me... - HVC
-  #define XYZ_HOLLOW_FRAME
+  //#define XYZ_HOLLOW_FRAME
 
   // Enable to save many cycles by drawing a hollow frame on Menu Screens
 // Rob Mendon / 3D Printing Candada disables this feature
@@ -1440,7 +1448,7 @@
 //
 #if HAS_DGUS_LCD
   #define DGUS_SERIAL_PORT 3
-  #define DGUS_BAUDRATE 115200
+  #define DGUS_BAUDRATE 1000000
 
   #define DGUS_RX_BUFFER_SIZE 128
   #define DGUS_TX_BUFFER_SIZE 48
@@ -1748,7 +1756,8 @@
  */
 #if HAS_BED_PROBE && TEMP_SENSOR_PROBE && TEMP_SENSOR_BED
   // Enable thermal first layer compensation using bed and probe temperatures
-  #define PROBE_TEMP_COMPENSATION
+  // Disabled just in case the above conditional is wrong? - HVC
+  // #define PROBE_TEMP_COMPENSATION
 
   // Add additional compensation depending on hotend temperature
   // Note: this values cannot be calibrated and have to be set manually
@@ -1806,7 +1815,8 @@
 //
 // G2/G3 Arc Support
 //
-#define ARC_SUPPORT                 // Disable this feature to save ~3226 bytes
+// Disabled to save bytes - HVC
+// #define ARC_SUPPORT                 // Disable this feature to save ~3226 bytes
 #if ENABLED(ARC_SUPPORT)
   #define MM_PER_ARC_SEGMENT      1 // (mm) Length (or minimum length) of each arc segment
   //#define ARC_SEGMENTS_PER_R    1 // Max segment length, MM_PER = Min
@@ -1924,13 +1934,18 @@
 // For debug-echo: 128 bytes for the optimal speed.
 // Other output doesn't need to be that speedy.
 // :[0, 2, 4, 8, 16, 32, 64, 128, 256]
-#define TX_BUFFER_SIZE 0
+#define TX_BUFFER_SIZE 128
 
 // Host Receive Buffer Size
 // Without XON/XOFF flow control (see SERIAL_XON_XOFF below) 32 bytes should be enough.
 // To use flow control, set this buffer size to at least 1024 bytes.
 // :[0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 //#define RX_BUFFER_SIZE 1024
+// Okay, I'll try 32 then. - HVC
+// 32 definitely doesn't work... trying 64!
+// 64 mostly works...
+// 128 mostly works...
+#define RX_BUFFER_SIZE 128
 
 #if RX_BUFFER_SIZE >= 1024
   // Enable to have the controller send XON/XOFF control characters to
@@ -1939,8 +1954,7 @@
 #endif
 
 // Add M575 G-code to change the baud rate
-// Uncommented so I can test for max reliable speed - HVC
-#define BAUD_RATE_GCODE
+// #define BAUD_RATE_GCODE
 
 #if ENABLED(SDSUPPORT)
   // Enable this option to collect and display the maximum
@@ -1973,7 +1987,8 @@
 
 // Printrun may have trouble receiving long strings all at once.
 // This option inserts short delays between lines of serial output.
-#define SERIAL_OVERRUN_PROTECTION
+// Disabled to try to save SRAM - HVC
+// #define SERIAL_OVERRUN_PROTECTION
 
 // For serial echo, the number of digits after the decimal point
 //#define SERIAL_FLOAT_PRECISION 4
@@ -2109,10 +2124,12 @@
 // Seems good to me... - HVC
 #define ADVANCED_PAUSE_FEATURE
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
-  #define PAUSE_PARK_RETRACT_FEEDRATE         60  // (mm/s) Initial retract feedrate.
-  #define PAUSE_PARK_RETRACT_LENGTH            2  // (mm) Initial retract.
+  // lowered to be within 25mm/s limit of printer - HVC
+  #define PAUSE_PARK_RETRACT_FEEDRATE         20  // (mm/s) Initial retract feedrate.
+  // increased to try to prevent oozing - HVC
+  #define PAUSE_PARK_RETRACT_LENGTH            10  // (mm) Initial retract.
                                                   // This short retract is done immediately, before parking the nozzle.
-  #define FILAMENT_CHANGE_UNLOAD_FEEDRATE     10  // (mm/s) Unload filament feedrate. This can be pretty fast.
+  #define FILAMENT_CHANGE_UNLOAD_FEEDRATE     20  // (mm/s) Unload filament feedrate. This can be pretty fast.
   #define FILAMENT_CHANGE_UNLOAD_ACCEL        25  // (mm/s^2) Lower acceleration may allow a faster feedrate.
   // I measured this to be approximately 36.5cm on my machine. - HVC
   #define FILAMENT_CHANGE_UNLOAD_LENGTH      365  // (mm) The length of filament for a complete unload.
@@ -2142,11 +2159,11 @@
   #define FILAMENT_UNLOAD_PURGE_LENGTH         8  // (mm) An unretract is done, then this length is purged.
   #define FILAMENT_UNLOAD_PURGE_FEEDRATE      25  // (mm/s) feedrate to purge before unload
 
-  #define PAUSE_PARK_NOZZLE_TIMEOUT           45  // (seconds) Time limit before the nozzle is turned off for safety.
+  #define PAUSE_PARK_NOZZLE_TIMEOUT           (20*60)  // (seconds) Time limit before the nozzle is turned off for safety.
   #define FILAMENT_CHANGE_ALERT_BEEPS         10  // Number of alert beeps to play when a response is needed.
   #define PAUSE_PARK_NO_STEPPER_TIMEOUT           // Enable for XYZ steppers to stay powered on during filament change.
 
-  //#define PARK_HEAD_ON_PAUSE                    // Park the nozzle during pause and filament change.
+  #define PARK_HEAD_ON_PAUSE                    // Park the nozzle during pause and filament change.
   //#define HOME_BEFORE_FILAMENT_CHANGE           // If needed, home before parking for filament change
 
   // Enabled, Sounds useful -- HVC
@@ -3144,7 +3161,8 @@
 /**
  * Disable all Volumetric extrusion options
  */
-//#define NO_VOLUMETRICS
+// Uncommented to try to save SRAM - HVC
+#define NO_VOLUMETRICS
 
 #if DISABLED(NO_VOLUMETRICS)
   /**
@@ -3176,7 +3194,8 @@
  *  - M206 and M428 are disabled.
  *  - G92 will revert to its behavior from Marlin 1.0.
  */
-//#define NO_WORKSPACE_OFFSETS
+// Uncommented to try to save SRAM - HVC
+#define NO_WORKSPACE_OFFSETS
 
 // Extra options for the M114 "Current Position" report
 //#define M114_DETAIL         // Use 'M114` for details to check planner calculations

@@ -121,8 +121,8 @@
  *
  * :[2400, 9600, 19200, 38400, 57600, 115200, 250000, 500000, 1000000]
  */
-// changed to 115200 to match bootloader frequency
-#define BAUDRATE 115200
+// changed to 500000, I can't get 1m to quite work - HVC
+#define BAUDRATE 500000
 
 // Enable the Bluetooth serial interface on AT90USB devices
 //#define BLUETOOTH
@@ -420,7 +420,7 @@
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 1
+#define TEMP_SENSOR_0 11
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
@@ -441,7 +441,8 @@
 //#define TEMP_SENSOR_1_AS_REDUNDANT
 #define MAX_REDUNDANT_TEMP_SENSOR_DIFF 10
 
-#define TEMP_RESIDENCY_TIME     10  // (seconds) Time to wait for hotend to "settle" in M109
+// Changed from 10 to 1 since the PID loop does such a good job. - HVC
+#define TEMP_RESIDENCY_TIME     1  // (seconds) Time to wait for hotend to "settle" in M109
 #define TEMP_WINDOW              1  // (°C) Temperature proximity for the "temperature reached" timer
 #define TEMP_HYSTERESIS          3  // (°C) Temperature proximity considered "close enough" to the target
 
@@ -885,7 +886,7 @@
   #endif
 #endif
 
-#define DEFAULT_EJERK    5.0  // May be used by Linear Advance
+#define DEFAULT_EJERK    2.5  // May be used by Linear Advance
 
 /**
  * Junction Deviation Factor
@@ -1085,12 +1086,12 @@
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
-#define PROBING_MARGIN 10
+#define PROBING_MARGIN 5
 
 // X and Y axis travel speed (mm/m) between probes
 // Default is 8000 (133*60) - HVC
 // Set this to 150*60 for readability mostly - HVC
-#define XY_PROBE_SPEED (150*60)
+#define XY_PROBE_SPEED (200*60)
 
 // Feedrate (mm/m) for the first approach when double-probing (MULTIPLE_PROBING == 2)
 #define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
@@ -1100,7 +1101,7 @@
 // Vain attempt to improve accuracy... - HVC
 // #define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST / 4)
 // Vain attempt to improve accuracy #2... - HVC
-#define Z_PROBE_SPEED_SLOW Z_PROBE_SPEED_FAST
+#define Z_PROBE_SPEED_SLOW (Z_PROBE_SPEED_FAST/2)
 
 /**
  * Multiple Probing
@@ -1115,7 +1116,7 @@
 //#define EXTRA_PROBING    1
 // Vain attempt to improve accuracy... - HVC
 #define MULTIPLE_PROBING 4
-#define EXTRA_PROBING    3
+#define EXTRA_PROBING    2
 
 /**
  * Z probes require clearance when deploying, stowing, and moving between
@@ -1141,11 +1142,13 @@
 // 3 will probably work... - HVC
 // 2 will probably work... - HVC
 // 1 will probably work... - HVC
-#define Z_CLEARANCE_BETWEEN_PROBES  2 // Z Clearance between probe points
-#define Z_CLEARANCE_MULTI_PROBE     2 // Z Clearance between multiple probes
+// 1 causes the probe to bounce, going up to 1.5 - HVC
+#define Z_CLEARANCE_BETWEEN_PROBES  4 // Z Clearance between probe points
+#define Z_CLEARANCE_MULTI_PROBE     1.5 // Z Clearance between multiple probes
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
-#define Z_PROBE_LOW_POINT          -3 // Farthest distance below the trigger-point to go before stopping
+// Any further than 2 and the nozzle could hit the bed - HVC
+#define Z_PROBE_LOW_POINT          -2 // Farthest distance below the trigger-point to go before stopping
 
 // For M851 give a range for adjusting the Z probe offset
 #define Z_PROBE_OFFSET_RANGE_MIN -20
@@ -1247,7 +1250,7 @@
 #define Y_MIN_POS 0
 #define Z_MIN_POS 0
 // Modified from X_BED_SIZE for extra danger - HVC
-#define X_MAX_POS X_BED_SIZE + 15
+#define X_MAX_POS X_BED_SIZE + 10
 #define Y_MAX_POS Y_BED_SIZE
 // Rob Mendon / 3D Printing Candada uses 320
 // Marlin example config 020006 uses 250
@@ -1656,7 +1659,7 @@
 // Copied from Rob Mendon / 3D Printing Candada
 #define PREHEAT_2_LABEL       "PETG"
 #define PREHEAT_2_TEMP_HOTEND 230
-#define PREHEAT_2_TEMP_BED     80
+#define PREHEAT_2_TEMP_BED     40
 #define PREHEAT_2_FAN_SPEED   0 // Value from 0 to 255
 
 /**
@@ -1771,7 +1774,8 @@
  *   M76 - Pause the print job timer
  *   M77 - Stop the print job timer
  */
-#define PRINTJOB_TIMER_AUTOSTART
+// Disabled to save SRAM - HVC
+//#define PRINTJOB_TIMER_AUTOSTART
 
 /**
  * Print Counter
@@ -1787,8 +1791,8 @@
  */
 // Rob Mendon / 3D Printing Candada uses print counter
 // Marlin example config 020006 disabled print counter
-// Why not - HVC
-#define PRINTCOUNTER
+// Disabled to save SRAM - HVC
+// #define PRINTCOUNTER
 
 //=============================================================================
 //============================= LCD and SD support ============================
@@ -1870,7 +1874,8 @@
  * Use CRC checks and retries on the SD communication.
  */
 // Enabled... seems useful? - HVC
-#define SD_CHECK_AND_RETRY
+// Disabled to save SRAM - HVC
+//#define SD_CHECK_AND_RETRY
 
 /**
  * LCD Menu Items
@@ -2395,7 +2400,8 @@
 // @section extras
 
 // Increase the FAN PWM frequency. Removes the PWM noise but increases heating in the FET/Arduino
-//#define FAST_PWM_FAN
+// Enabled -- you can make it not so fast anyway... - HVC
+#define FAST_PWM_FAN
 
 // Use software PWM to drive the fan, as for the heaters. This uses a very low frequency
 // which is not as annoying as with the hardware PWM. On the other hand, if this frequency

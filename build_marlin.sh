@@ -48,7 +48,7 @@ else
 		if cmp --silent "$f" "Marlin/${f##*/}" ; then
 			echo Not copying "$f", it hasnt changed >&2
 		else
-			cp -vi "$f" "Marlin/"
+			cp -v "$f" "Marlin/"
 		fi
 	done
 fi
@@ -59,3 +59,5 @@ platformio run --verbose --target debug
 
 ls .pio/build/*/firmware.elf
 ls .pio/build/*/firmware.hex
+
+rsync -aP .pio/build/mega2560/firmware.elf 192.168.0.13:christine.elf
