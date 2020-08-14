@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <!--
+index.html - Front page for reverse proxy
+Copyright &copy; 2020 Hazel Victoria Campbell
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+    -->
+    <title>carrie ^_^</title>
+    <meta name="author" content="Hazel Victoria Campbell">
+    <style>
+      body {
+        font-family: Arial, Helvetica Neue, Helvetica, sans-serif;
+        font-size: 400%;
+        background-color: #000;
+        color: #af3fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-items: center;
+      }
+      footer>small {
+        font-family: "Lucida Console", Monaco, monospace;
+        font-size: 50%;
+        color: #333;
+      }
+      header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-items: center;
+      }
+      header h1 {
+        font-size: 120%;
+        display: block;
+      }
+      ul {
+        display: block;
+        text-align: center;
+      }
+      ul li {
+        display: block;
+      }
+      header ul {
+        display: flex;
+        align-items: center;
+        font-family: "Lucida Console", Monaco, monospace;
+        font-size: 50%;
+      }
+      header ul>li {
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+      }
+      a {
+        text-decoration: none;
+        font-size: 100%;
+      }
+      @keyframes ghost {
+        0% { color: #000000; }
+        10% { color: #270927; }
+        20% { color: #4e134e; }
+        30% { color: #731c73; }
+        40% { color: #952595; }
+        50% { color: #b42cb4; }
+        60% { color: #ce32ce; }
+        70% { color: #e338e3; }
+        80% { color: #f23bf2; }
+        90% { color: #fb3efb; }
+        100% { color: #ff3fff; }
+      }
+      a:link, a:visited, a:active, a:hover {
+/*        animation-duration: 2s;
+        animation-name: ghost;
+        animation-direction: alternate;
+        animation-iteration-count: infinite;*/
+        color: #ff3faf;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>carrie (~˘▾˘)~</h1>
+      <ul>
+        <li>cpu: {{status.cpu}}%</li>
+        <li>ram: {{status.ram}}%</li>
+      </ul>
+    </header>
+    <nav>
+      <ul>
+        <li><a href="/christine/">(•̀ᴗ•́ ) christine</a></li>
+        <li><a href="/wiki/">wiki (づ｡◕‿‿◕｡)づ</a></li>
+      </ul>
+    </nav>
+    <footer>
+      <small>
+        <pre>
+        </pre>
+      </small>
+    </footer>
+  </body>
+</html>
