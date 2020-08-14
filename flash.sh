@@ -6,13 +6,18 @@ set -o pipefail
 
 SERIAL=/dev/ttyUSB0
 
-f="$1"
-shift
-
-if [[ ! -r "$f" ]] ; then
-	echo "No such file $f"
-	exit 2
-fi
+function upload {
+	f="$1" ; shift
+	if [[ ! -r "$f" ]] ; then
+		echo "No such file $f"
+		exit 2
+	fi
+	avrdude -c wiring \
+		-b 115200 \
+		-p ATmega2560 \
+		-P /dev/ttyUSB0 \
+		-U flash:w:"$f"
+}
 
 if [[ ! -c "$SERIAL" ]] ; then
 	echo "No such port $SERIAL"
@@ -26,7 +31,7 @@ function setup {
 	(( speed > 0 ))
 	setserial -a /dev/fd/99 spd_cust divisor $((24000000/speed))
 	stty 38400 <&99 || true
-	stty time 10 \
+	stty time 0 \
 		rows 0 cols 0 line 0 min 1 \
 		-parenb -parodd -cmspar cs8 hupcl -cstopb cread clocal \
 		-crtscts \
@@ -53,22 +58,61 @@ function send {
 	printf "\n" >&99
 }
 
-function main {
-	exec 99<>"$SERIAL"
-	./reset <&99
-	setup 250000
-	ok
-	send M502
-	ok
-	send M500
-	ok
-	send M575 B1000000
-	setup 1000000
-	sleep 0.1
-	send M115
-	ok
-	send M115
+function hello {
+	while true ; do
+		send M118 ping
+		local -i s=$EPOCHSECONDS
+		while (( s == EPOCHSECONDS )) ; do
+			IFS='' read -sr RESPONSE <&99 || true
+			if [[ ! -z "$RESPONSE" ]] ; then
+				echo "< $RESPONSE"
+			fi
+			if [[ "$RESPONSE" == *ping* ]] ; then
+				return 0
+			fi
+		done
+	done
+}
+
+function commcheck {
+	max=$((96-6)) # -6 for "M118 \n"
+	send M118 $r
+	for (( l = 0; l < max ; l++ )) ; do
+	for i in {1..100} ; do
+		s="$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM"
+		s="$s$s$s$s$s"
+		s="${s:0:l}"
+		send M118 $s >/dev/null
+		while [[ "$RESPONSE" != *$s* ]] ; do
+			IFS='' read -sr RESPONSE <&99 || true
+			#echo "< $RESPONSE"
+		done
+	done
+		echo "l=$l passed"
+	done
 	ok
 }
 
-main
+function main {
+	if (( $# > 0 )) ; then
+		upload "$1"
+		shift
+	fi
+	exec 99<>"$SERIAL"
+	reset_printer <&99
+	setup 500000
+	hello
+	send M115; ok
+	send M502; ok
+	send M851 Z-2.8; ok
+	send M900 K2.4; ok
+	send M205 E2.5; ok
+	send M500; ok
+	send M504; ok
+	send M503; ok
+	time commcheck
+}
+
+if [[ "$0" == "$BASH_SOURCE" ]] ; then
+	main "$@"
+fi
